@@ -68,21 +68,19 @@ export const updateProduct = CatchAsyncError(
       }
 
       // Update fields if provided
-      const updateFields: { [key: string]: any } = {};
-      if (name) updateFields.name = name;
-      if (unit_price !== undefined) updateFields.unit_price = unit_price;
-      if (stock !== undefined) updateFields.stock = stock;
+      if (name) product.name = name;
+      if (unit_price !== undefined) product.unit_price = unit_price;
+      if (stock !== undefined) product.stock = stock;
 
-      // Update product - status will be updated automatically by the pre-save middleware
-      const updatedProduct = await inventoryModel.findByIdAndUpdate(
-        productId,
-        updateFields,
-        { new: true, runValidators: true }
-      );
+      // Save the product - this will trigger the pre-save middleware
+      // which will update the status based on the new stock level
+      await product.save();
+
+      // Get the updated product without timestamp and version fields
+      await inventoryModel.findById(productId, "-createdAt -updatedAt -__v");
 
       res.status(200).json({
         message: "Product updated successfully",
-        product: updatedProduct,
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
@@ -118,7 +116,11 @@ export const deleteProduct = CatchAsyncError(
 export const getAllProducts = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const products = await inventoryModel.find();
+      // Use projection to exclude createdAt, updatedAt, and __v fields
+      const products = await inventoryModel.find(
+        {},
+        "-createdAt -updatedAt -__v"
+      );
 
       res.status(200).json({
         products,

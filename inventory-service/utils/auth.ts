@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { CatchAsyncError } from "../middlewares/catchAsyncError";
 import ErrorHandler from "./ErrorHandler";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { iuser } from "../controllers/sales.controller";
+import { iuser } from "../controllers/inventory.controller";
 
 import "dotenv/config";
 
