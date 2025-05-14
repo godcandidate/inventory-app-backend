@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import "dotenv/config";
+import salesRouter from "./routes/sales.routes";
 
 const app = express();
 
@@ -19,6 +20,8 @@ app.use(
 );
 
 // routes
+// routes
+app.use("/sales", salesRouter);
 
 //testing api
 app.use("/test", (req: Request, res: Response) => {
