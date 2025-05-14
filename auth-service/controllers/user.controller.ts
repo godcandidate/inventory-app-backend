@@ -74,7 +74,6 @@ export const registerUser = CatchAsyncError(
         });
 
         res.status(201).json({
-          success: true,
           message: `User account created successfully`,
         });
       } catch (error: any) {
@@ -175,7 +174,6 @@ export const updateUser = CatchAsyncError(
       }
 
       res.status(200).json({
-        success: true,
         message: "User updated successfully",
       });
     } catch (error: any) {
@@ -200,7 +198,6 @@ export const deleteUser = CatchAsyncError(
       await userModel.findByIdAndDelete(userId);
 
       res.status(200).json({
-        success: true,
         message: "User deleted successfully",
       });
     } catch (error: any) {
@@ -224,13 +221,28 @@ export const userAnalytics = CatchAsyncError(
       });
 
       res.status(200).json({
-        success: true,
         stats: {
           totalUsers,
           admin: adminUsers,
           sales: salesUsers,
           inventory: inventoryUsers,
         },
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+//get all users
+export const getAllUsers = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Get all users with only name, email, and role fields
+      const users = await userModel.find({}, "name email role");
+
+      res.status(200).json({
+        users,
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));

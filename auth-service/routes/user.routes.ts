@@ -5,6 +5,7 @@ import {
   updateUser,
   deleteUser,
   userAnalytics,
+  getAllUsers,
 } from "../controllers/user.controller";
 import { authorizeRoles, isAuthenticated } from "../utils/auth";
 
@@ -28,6 +29,13 @@ userRouter.get(
   isAuthenticated,
   authorizeRoles("admin"),
   userAnalytics
+);
+
+userRouter.get(
+  "/all",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  getAllUsers
 );
 
 export default userRouter;
