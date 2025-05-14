@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import userModel, { IUser } from "../models/user.model";
 import ErrorHandler from "../utils/ErrorHandler";
 import { CatchAsyncError } from "../middlewares/catchAsyncError";
+import jwt, { Secret, JwtPayload } from "jsonwebtoken";
 
 import ejs from "ejs";
 import path from "path";
@@ -51,6 +52,15 @@ export const registerUser = CatchAsyncError(
 
       //send email to user
       try {
+        //store user data in database
+        await userModel.create({
+          name,
+          email,
+          password,
+          role,
+        });
+
+        //send email
         await sendMail({
           email: user.email,
           subject: "Account Creation",
@@ -69,6 +79,54 @@ export const registerUser = CatchAsyncError(
     } catch (error: any) {
       console.log(error);
       return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+//Login user
+interface ILoginRequest {
+  email: string;
+  password: string;
+}
+
+export const loginUser = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, password } = req.body as ILoginRequest;
+      if (!email || !password) {
+        res.status(400).json({
+          message: "Invalid credentials",
+        });
+      }
+
+      const user = await userModel.findOne({ email }).select("+password");
+
+      if (!user) {
+        return next(new ErrorHandler("Invalid email or password", 403));
+      }
+
+      //check password
+      const isPasswordMatch = await user.comparePassword(password);
+      if (!isPasswordMatch) {
+        return next(new ErrorHandler("Invalid email or password", 403));
+      }
+
+      // Create a Access token
+      const accesstoken = jwt.sign(
+        {
+          userId: user._id,
+        },
+        process.env.JWT_ACCESS_TOKEN as Secret,
+        { expiresIn: "72h" }
+      );
+
+      return res.status(200).send({
+        name: user.name,
+        role: user.role,
+        accesstoken,
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 403));
     }
   }
 );
