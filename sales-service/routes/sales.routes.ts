@@ -1,7 +1,7 @@
 import express from "express";
 
 import { authorizeRoles, isAuthenticated } from "../utils/auth";
-import { addSales } from "../controllers/sales.controller";
+import { addSales, getAllSales } from "../controllers/sales.controller";
 
 const salesRouter = express.Router();
 
@@ -10,6 +10,13 @@ salesRouter.post(
   isAuthenticated,
   authorizeRoles("admin", "sales"),
   addSales
+);
+
+salesRouter.get(
+  "/all",
+  isAuthenticated,
+  authorizeRoles("admin", "sales"),
+  getAllSales
 );
 
 export default salesRouter;
