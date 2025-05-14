@@ -1,7 +1,13 @@
 import express from "express";
 
 import { authorizeRoles, isAuthenticated } from "../utils/auth";
-import { addSales, getAllSales } from "../controllers/sales.controller";
+import {
+  addSales,
+  getAllSales,
+  getUserSalesAnalytics,
+  getAllSalesAnalytics,
+  getAllUserSales,
+} from "../controllers/sales.controller";
 
 const salesRouter = express.Router();
 
@@ -12,11 +18,28 @@ salesRouter.post(
   addSales
 );
 
+salesRouter.get("/all", isAuthenticated, authorizeRoles("admin"), getAllSales);
+
 salesRouter.get(
-  "/all",
+  "/user",
   isAuthenticated,
   authorizeRoles("admin", "sales"),
-  getAllSales
+  getAllUserSales
+);
+
+// Analytics routes
+salesRouter.get(
+  "/user/analytics",
+  isAuthenticated,
+  authorizeRoles("admin", "sales"),
+  getUserSalesAnalytics
+);
+
+salesRouter.get(
+  "/analytics",
+  isAuthenticated,
+  authorizeRoles("admin", "sales"),
+  getAllSalesAnalytics
 );
 
 export default salesRouter;
