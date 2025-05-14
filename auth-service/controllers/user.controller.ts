@@ -115,6 +115,7 @@ export const loginUser = CatchAsyncError(
       const accesstoken = jwt.sign(
         {
           userId: user._id,
+          role: user.role,
         },
         process.env.JWT_ACCESS_TOKEN as Secret,
         { expiresIn: "72h" }
@@ -127,6 +128,76 @@ export const loginUser = CatchAsyncError(
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 403));
+    }
+  }
+);
+
+//Update user
+export const updateUser = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { name, password, role } = req.body;
+      const userId = req.user;
+
+      const user = await userModel.findById(userId);
+
+      if (!user) {
+        return next(new ErrorHandler("User not found", 404));
+      }
+
+      // Create an object to store fields to update
+      const updateFields: { [key: string]: any } = {};
+
+      // Conditionally add fields to update
+      if (name) updateFields.name = name;
+      if (role) updateFields.role = role;
+
+      // Handle password separately as it needs to be hashed
+      if (password) {
+        // The password will be automatically hashed by the pre-save hook
+        user.password = password;
+        await user.save();
+      }
+
+      // Update other fields if there are any
+      if (Object.keys(updateFields).length > 0) {
+        await userModel.findByIdAndUpdate(userId, updateFields, {
+          new: true,
+          runValidators: true,
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "User updated successfully",
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+//delete user
+export const deleteUser = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user;
+
+      const user = await userModel.findById(userId);
+
+      if (!user) {
+        return next(new ErrorHandler("User not found", 404));
+      }
+
+      // Delete the user
+      await userModel.findByIdAndDelete(userId);
+
+      res.status(200).json({
+        success: true,
+        message: "User deleted successfully",
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
     }
   }
 );
