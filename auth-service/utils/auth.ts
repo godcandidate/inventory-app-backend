@@ -6,12 +6,12 @@ import userModel from "../models/user.model";
 
 import "dotenv/config";
 
-import { IUser } from "../models/user.model";
+import { iuser } from "../controllers/user.controller";
 
 //using interface for req.user
 declare module "express" {
   interface Request {
-    user?: IUser;
+    user?: iuser;
   }
 }
 
@@ -34,21 +34,22 @@ export const isAuthenticated = CatchAsyncError(
         token,
         process.env.JWT_ACCESS_TOKEN as string
       ) as JwtPayload;
-      
+
       if (!decoded) {
         return next(new ErrorHandler("Access token not valid", 400));
       }
 
       // Extract the userId from the decoded token
       const userId = decoded.userId;
-      
+      const role = decoded.role;
+
       if (!userId) {
         return next(new ErrorHandler("User ID not found in token", 400));
       }
 
       // Set the userId in the request object for use in controllers
-      req.user = userId as any;
-      
+      req.user = { userId, role } as any;
+
       next();
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
@@ -59,10 +60,13 @@ export const isAuthenticated = CatchAsyncError(
 //validate user role
 export const authorizeRoles = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!roles.includes(req.user?.role || "")) {
+    // Get the user role as a string
+    const userRole = req.user?.role || "";
+    
+    if (!roles.includes(userRole)) {
       return next(
         new ErrorHandler(
-          `Role: ${req.user?.role} is not allowed to access this resource`,
+          `Role: ${userRole} is not allowed to access this resource`,
           403
         )
       );

@@ -9,9 +9,14 @@ import path from "path";
 import sendMail from "../utils/sendEmail";
 
 //using interface for req.user
+
+export interface iuser {
+  userId: string;
+  role: string;
+}
 declare module "express" {
   interface Request {
-    user?: IUser;
+    user?: iuser;
   }
 }
 
@@ -137,7 +142,7 @@ export const updateUser = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { name, password, role } = req.body;
-      const userId = req.user;
+      const userId = req.user?.userId;
 
       const user = await userModel.findById(userId);
 
@@ -150,7 +155,9 @@ export const updateUser = CatchAsyncError(
 
       // Conditionally add fields to update
       if (name) updateFields.name = name;
-      if (role) updateFields.role = role;
+      if (role) {
+        updateFields.role = role;
+      }
 
       // Handle password separately as it needs to be hashed
       if (password) {
@@ -181,7 +188,7 @@ export const updateUser = CatchAsyncError(
 export const deleteUser = CatchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = req.user;
+      const userId = req.user?.userId;
 
       const user = await userModel.findById(userId);
 
@@ -195,6 +202,35 @@ export const deleteUser = CatchAsyncError(
       res.status(200).json({
         success: true,
         message: "User deleted successfully",
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+//analytics
+export const userAnalytics = CatchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Get total number of users
+      const totalUsers = await userModel.countDocuments();
+
+      // Get count of users by role
+      const adminUsers = await userModel.countDocuments({ role: "admin" });
+      const salesUsers = await userModel.countDocuments({ role: "sales" });
+      const inventoryUsers = await userModel.countDocuments({
+        role: "inventory",
+      });
+
+      res.status(200).json({
+        success: true,
+        stats: {
+          totalUsers,
+          admin: adminUsers,
+          sales: salesUsers,
+          inventory: inventoryUsers,
+        },
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));

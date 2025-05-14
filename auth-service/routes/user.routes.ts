@@ -4,8 +4,9 @@ import {
   loginUser,
   updateUser,
   deleteUser,
+  userAnalytics,
 } from "../controllers/user.controller";
-import { isAuthenticated } from "../utils/auth";
+import { authorizeRoles, isAuthenticated } from "../utils/auth";
 
 const userRouter = express.Router();
 
@@ -15,6 +16,18 @@ userRouter.post("/login", loginUser);
 
 userRouter.put("/update", isAuthenticated, updateUser);
 
-userRouter.delete("/delete", isAuthenticated, deleteUser);
+userRouter.delete(
+  "/delete",
+  authorizeRoles("admin"),
+  isAuthenticated,
+  deleteUser
+);
+
+userRouter.get(
+  "/analytics",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  userAnalytics
+);
 
 export default userRouter;
